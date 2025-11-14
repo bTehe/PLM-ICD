@@ -76,6 +76,9 @@ Make sure the dataset files are where they should be:
 ls files/data/mimiciii_demo
 # should contain mimiciii_demo.feather and mimiciii_demo_splits.feather
 ```
+### Before running experiments
+1. Create a weights and biases account. It is possible to run the experiments without wandb.
+2. You need to download [RoBERTa-base-PM-M3-Voc](https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-hf.tar.gz), unzip it and change the model_path parameter in **`configs/model/plm_icd.yaml`** and **`configs/text_transform /huggingface.yaml`** to the path of the download.
 
 ### 3.2. Training PLM-ICD from scratch on `mimiciii_demo`
 
