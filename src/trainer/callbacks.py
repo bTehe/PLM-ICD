@@ -75,7 +75,7 @@ class BaseCallback:
 class WandbCallback(BaseCallback):
     def __init__(self, config: OmegaConf):
         super().__init__()
-        self.config = config  # это OmegaConf-ветка с параметрами wandb (project, entity, group, notes и т.п.)
+        self.config = config
 
     def extract_tags(self, trainer) -> list[str]:
         tags = []
@@ -85,7 +85,6 @@ class WandbCallback(BaseCallback):
         return tags
 
     def on_initialisation_end(self, trainer=None):
-        # Полная конфигурация (для wandb.config)
         wandb_cfg = OmegaConf.to_container(
             trainer.config, resolve=True, throw_on_missing=True
         )
@@ -93,7 +92,6 @@ class WandbCallback(BaseCallback):
         tags = self.extract_tags(trainer)
         mode = "disabled" if trainer.config.debug else "online"
 
-        # Добавим полезные поля в конфиг
         wandb_cfg["num_parameters"] = sum(p.numel() for p in trainer.model.parameters())
         wandb_cfg["num_trainable_parameters"] = sum(
             p.numel() for p in trainer.model.parameters() if p.requires_grad
@@ -101,14 +99,11 @@ class WandbCallback(BaseCallback):
         if trainer.lookups is not None:
             wandb_cfg["data_info"] = trainer.lookups.data_info
 
-        # Превратим ветку self.config в обычный dict и уберём потенциально конфликтные ключи
-        # (dir передаём через Settings; tags/name/mode мы тоже задаём вручную)
         init_kwargs = OmegaConf.to_container(self.config, resolve=True) or {}
         # Защитно почистим конфликты:
         for k in ("dir", "tags", "name", "config", "settings", "mode"):
             init_kwargs.pop(k, None)
 
-        # ВАЖНО: dir задаём ТОЛЬКО через settings, чтобы не было дубля
         settings = wandb.Settings(
             start_method="thread",
             dir=str(EXPERIMENT_DIR),
@@ -126,11 +121,9 @@ class WandbCallback(BaseCallback):
         wandb.watch(trainer.model)
 
         if not trainer.config.debug:
-            # Папка эксперимента — по id текущего запуска
             trainer.experiment_path = Path(EXPERIMENT_DIR) / wandb.run.id
             trainer.experiment_path.mkdir(exist_ok=False, parents=True)
 
-            # Сохраняем конфиг ТЕПЕРЬ (после установки пути)
             OmegaConf.save(trainer.config, trainer.experiment_path / "config.yaml")
 
     def log_dict(
