@@ -39,9 +39,8 @@ These last two Feather files are what the training code actually loads.
 ## 2. Installation (local machine)
 
 ### 2.1. Clone the repo
-
-```bash
 [git clone <YOUR_FORK_URL> PLM-ICD](https://github.com/bTehe/PLM-ICD.git)
+```bash
 cd PLM-ICD
 ```
 
