@@ -42,7 +42,7 @@ These last two Feather files are what the training code actually loads.
 
 ```bash
 [git clone <YOUR_FORK_URL> PLM-ICD](https://github.com/bTehe/PLM-ICD.git)
-cd medical-coding-reproducibility-demo
+cd PLM-ICD
 ```
 
 ### 2.2. Create environment
