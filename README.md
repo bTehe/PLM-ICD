@@ -1,116 +1,161 @@
-# ⚕️Automated Medical Coding on MIMIC-III and MIMIC-IV: A Critical Review and Replicability Study
+# PLM-ICD on `mimiciii_demo` (MIMIC-III Demo, Synthetic Notes)
 
-Official source code repository for the SIGIR 2023 paper [Automated Medical Coding on MIMIC-III and MIMIC-IV: A Critical Review and Replicability Study](https://dl.acm.org/doi/10.1145/3539618.3591918)
+This repository is a fork/customisation of **medical-coding-reproducibility** that
+adds a **toy ICD coding experiment** based on the **MIMIC-III Demo** dataset.
 
+Because MIMIC-III Demo does **not** contain free-text clinical notes, we build a
+synthetic dataset called **`mimiciii_demo`**:
 
-```bibtex
-@inproceedings{edinAutomatedMedicalCoding2023,
-  address = {Taipei, Taiwan},
-  title = {Automated {Medical} {Coding} on {MIMIC}-{III} and {MIMIC}-{IV}: {A} {Critical} {Review} and {Replicability} {Study}},
-  isbn = {978-1-4503-9408-6},
-  shorttitle = {Automated {Medical} {Coding} on {MIMIC}-{III} and {MIMIC}-{IV}},
-  doi = {10.1145/3539618.3591918},
-  booktitle = {Proceedings of the 46th {International} {ACM} {SIGIR} {Conference} on {Research} and {Development} in {Information} {Retrieval}},
-  publisher = {ACM Press},
-  author = {Edin, Joakim and Junge, Alexander and Havtorn, Jakob D. and Borgholt, Lasse and Maistro, Maria and Ruotsalo, Tuukka and Maaløe, Lars},
-  year = {2023}
-}
+- input text is generated from ICD long titles,
+- labels are true ICD-9 codes from the demo tables,
+- we then train / evaluate **PLM-ICD** on this toy dataset.
+
+> ⚠️ **Important:** This is for debugging, teaching and pipeline testing only.  
+> The dataset is synthetic and **not suitable for real clinical conclusions or training.**
+> The .feather files are already included, so you do not need MIMIC-III full
+to run this experiment.
+
+## 1. How the `mimiciii_demo` dataset is constructed
+
+High-level idea:
+
+1. Read MIMIC-III Demo tables:
+   - `DIAGNOSES_ICD.csv`
+   - `D_ICD_DIAGNOSES.csv`
+2. Group ICD-9 codes per `HADM_ID`.
+3. For each `HADM_ID`, create a synthetic “note”:
+   - concatenate `LONG_TITLE` of each ICD-9 code into a short paragraph  
+     (e.g. `"Diagnoses: CONGESTIVE HEART FAILURE. TYPE II DIABETES..."`).
+4. Use the ICD-9 codes as multi-label targets:
+   - labels are stored as a list of codes (and also as a string `"4019;25000;..."` in CSV).
+5. Randomly split admissions into train/validation/test, e.g. 60/20/20.
+6. Save:
+   - `train_demo.csv`, `dev_demo.csv`, `test_demo.csv`
+   - merged and preprocessed dataset in `mimiciii_demo.feather`
+   - split information in `mimiciii_demo_splits.feather`.
+
+These last two Feather files are what the training code actually loads.
+
+## 2. Installation (local machine)
+
+### 2.1. Clone the repo
+
+```bash
+git clone <YOUR_FORK_URL> medical-coding-reproducibility-demo
+cd medical-coding-reproducibility-demo
 ```
 
-## Update
-We released a new [paper](https://arxiv.org/pdf/2406.08958) and [repository](https://github.com/JoakimEdin/explainable-medical-coding/tree/main) for explainable medical coding. The new repository offers the following:
-- **Explainability**: Multiple feature attribution methods and metrics for multi-label classification. 
-- **Implementation of a modified PLM-ICD**: We have fixed the problem of PLM-ICD occasionally collapsing during training.
-- **Huggingface Datasets**: we implemented MIMIC-III, IV, and MDACE as HuggingFace datasets.
-- **Inference code**: We provide code for inference without needing the training dataset.
-The new repository no longer supports CNN, Bi-GRU, CAML, LAAT, and MultiResCNN.
+### 2.2. Create environment
 
-Also, check out [my blog post](https://substack.com/home/post/p-145913061?source=queue) criticizing popular ideas in automated medical coding. I think it will be interesting for most researchers in the field
+Using conda (recommended):
 
-## Introduction 
-Automatic medical coding is the task of automatically assigning diagnosis and procedure codes based on discharge summaries from electronic health records. This repository contains the code used in the paper Automated medical coding on MIMIC-III and MIMIC-IV: A Critical Review and Replicability Study. The repository contains code for training and evaluating medical coding models and new splits for MIMIC-III and the newly released MIMIC-IV. The following models have been implemented:
+```bash
+conda create -n plmicd-demo python=3.10 -y
+conda activate plmicd-demo
+pip install -r requirements.txt
+```
 
-| Model | Paper | Original Code |
-| ----- | ----- | ------------- |
-| CNN   |[Explainable Prediction of Medical Codes from Clinical Text](https://aclanthology.org/N18-1100/) | [link](https://github.com/jamesmullenbach/caml-mimic) | 
-| Bi-GRU|[Explainable Prediction of Medical Codes from Clinical Text](https://aclanthology.org/N18-1100/) | [link](https://github.com/jamesmullenbach/caml-mimic) | 
-|CAML   |[Explainable Prediction of Medical Codes from Clinical Text](https://aclanthology.org/N18-1100/) | [link](https://github.com/jamesmullenbach/caml-mimic) | 
-| MultiResCNN | [ICD Coding from Clinical Text Using Multi-Filter Residual Convolutional Neural Network](https://arxiv.org/pdf/1912.00862.pdf) | [link](https://github.com/foxlf823/Multi-Filter-Residual-Convolutional-Neural-Network) |
-| LAAT | [A Label Attention Model for ICD Coding from Clinical Text](https://arxiv.org/abs/2007.06351) | [link](https://github.com/aehrc/LAAT) |
-| PLM-ICD | [PLM-ICD: Automatic ICD Coding with Pretrained Language Models](https://aclanthology.org/2022.clinicalnlp-1.2/) | [link](https://github.com/MiuLab/PLM-ICD) |
+If you use plain `venv`, the steps are analogous.
 
-The splits are found in `files/data`. The splits are described in the paper.
+---
 
-## How to reproduce results
-### Setup Conda environment
-1. Create a conda environement `conda create -n coding python=3.10`
-2. Install the packages `pip install . -e`
+## 3. Running the `mimiciii_demo` experiment locally
 
-### Prepare MIMIC-III
-This code has been developed on MIMIC-III v1.4. 
-1. Download the MIMIC-III data into your preferred location `path/to/mimiciii`. Please note that you need to complete training to acces the data. The training is free, but takes a couple of hours.  - [link to data access](https://physionet.org/content/mimiciii/1.4/)
-2. Open the file `src/settings.py`
-3. Change the variable `DOWNLOAD_DIRECTORY_MIMICIII` to the path of your downloaded data `path/to/mimiciii`
-4. If you want to use the MIMIC-III full and MIMIC-III 50 from the [Explainable Prediction of Medical Codes from Clinical Text](https://aclanthology.org/N18-1100/) you need to run `python prepare_data/prepare_mimiciii_mullenbach.py`
-5. If you want to use MIMIC-III clean from our paper you need to run `python prepare_data/prepare_mimiciii.py`
+### 3.1. Quick sanity check
 
-### Prepare MIMIC-IV
-This code has been developed on MIMIC-IV and MIMIC-IV v2.2. 
-1. Download MIMIC-IV and MIMIC-IV-NOTE into your preferred location `path/to/mimiciv` and `path/to/mimiciv-note`. Please note that you need to complete training to acces the data. The training is free, but takes a couple of hours.  - [mimiciv](https://physionet.org/content/mimiciv/2.2/) and [mimiciv-note](https://physionet.org/content/mimic-iv-note/2.2/)
-2. Open the file `src/settings.py`
-3. Change the variable `DOWNLOAD_DIRECTORY_MIMICIV` to the path of your downloaded data `path/to/mimiciv`
-4. Change the variable `DOWNLOAD_DIRECTORY_MIMICIV_NOTE` to the path of your downloaded data `path/to/mimiciv-note`
-5. Run `python prepare_data/prepare_mimiciv.py`
+Make sure Hydra sees the configs:
 
-### Before running experiments
-1. Create a weights and biases account. It is possible to run the experiments without wandb.
-2. Download the [model checkpoints](https://drive.google.com/file/d/1hYeJhztAd-JbhqHojY7ZpLtkBcthD8AK/view?usp=share_link) and unzip it. Please note that these model weights can't be used commercially due to the MIMIC License.
-3. If you want to train PLM-ICD, you need to download [RoBERTa-base-PM-M3-Voc](https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-hf.tar.gz), unzip it and change the `model_path` parameter in `configs/model/plm_icd.yaml` and `configs/text_transform
-/huggingface.yaml` to the path of the download. 
+```bash
+ls configs/data/mimiciii_demo.yaml
+ls configs/experiment/mimiciii_demo/plm_icd.yaml
+```
 
-### Running experiments
-#### Training
-You can run any experiment found in `configs/experiment`. Here are some examples:
-   * Train PLM-ICD on MIMIC-III clean on GPU 0: `python main.py experiment=mimiciii_clean/plm_icd gpu=0`
-   * Train CAML on MIMIC-III full on GPU 6: `python main.py experiment=mimiciii_full/caml gpu=6`
-   * Train LAAT on MIMIC-IV ICD-9 full on GPU 6: `python main.py experiment=mimiciv_icd9/laat gpu=6`
-   * Train LAAT on MIMIC-IV ICD-9 full on GPU 6 without weights and biases: `python main.py experiment=mimiciv_icd9/laat gpu=6 callbacks=no_wandb trainer.print_metrics=true`
-   
-#### Evaluation
-If you just want to evaluate the models using the provided model_checkpoints you need to do set `trainer.epochs=0` and provide the path to the models checkpoint `load_model=path/to/model_checkpoint`. Make sure you the correct model-checkpoint with the correct configs.
+Make sure the dataset files are where they should be:
 
-Example:
-Evaluate PLM-ICD on MIMIC-IV ICD-10 on GPU 1: `python main.py experiment=mimiciv_icd10/plm_icd gpu=1 load_model=path/to/model_checkpoints/mimiciv_icd10/plm_icd trainer.epochs=0`
+```bash
+ls files/data/mimiciii_demo
+# should contain mimiciii_demo.feather and mimiciii_demo_splits.feather
+```
 
-## Overview of the repository
-#### configs
-We use [Hydra](https://hydra.cc/docs/intro/) for configurations. The condigs for every experiment is found in `configs/experiments`. Furthermore, the configuration for the sweeps are found in `configs/sweeps`. We used [Weights and Biases Sweeps](https://docs.wandb.ai/guides/sweeps) for most of our experiments.
+### 3.2. Training PLM-ICD from scratch on `mimiciii_demo`
 
-#### files
-This is where the images and data is stored.
+This will train a PLM-ICD model on the synthetic dataset:
 
-#### notebooks
-The directory only contains one notebook used for the code analysis. The notebook is not aimed to be used by others, but is included for others to validate our data analysis.
+```bash
+python -u main.py experiment=mimiciii_demo/plm_icd gpu=0 trainer.epochs=5 trainer.print_metrics=true
+```
 
-#### prepare_data
-The directory contains all the code for preparing the datasets and generating splits.
+Main arguments:
 
-#### reports
-This is the code used to generate the plots and tables used in the paper. The code uses the Weights and Biases API to fetch the experiment results. The code is not usable by others, but was included for the possibility to validate our figures and tables.
+- `experiment=mimiciii_demo/plm_icd` – choose the right Hydra experiment.
+- `gpu=0` – use GPU 0 (set to `-1` to use CPU only, or another index).
+- `trainer.epochs=5` – number of training epochs (tune as you wish).
+- `trainer.print_metrics=true` – print evaluation metrics after training.
 
-#### src
-This is were the code for running the experiments is found.
+The model checkpoint will be written under the path configured in the
+experiment (typically inside `files/` or a Hydra `outputs/` directory,
+depending on your settings).
 
-#### tests
-The directory contains the unit tests
+### 3.3. Evaluating an existing checkpoint on `mimiciii_demo`
 
-## My setup
-I ran the experiments on one RTX 2080 Ti 11GB per experiment. I had 128 GB RAM on my machine.
+If you already have a trained model, point `load_model` to its folder and set
+`trainer.epochs=0` to run pure evaluation:
 
-## ⚠️ Known issues 
-* LAAT and PLM-ICD are unstable. The loss will sometimes diverge during training. The issue seems to be overflow in the softmax function in the label-wise attention. Using batch norm or layer norm before the softmax function might solve the issue. We did not try to fix the issue as we didn't want to change the original method during our reproducibility.
-* The code was only tested on a server with 128 GB RAM. A user with 32 GB RAM reported issues fitting MIMIC-IV into memory.
-* There is an error in the collate function in the Huggingface dataset. The attention mask is being padded with 1s instead of 0s. I have not fixed this issue because I want people to be able to reproduce the results from the paper.
+```bash
+python -u main.py \
+  experiment=mimiciii_demo/plm_icd \
+  gpu=0 \
+  trainer.epochs=0 \
+  load_model=files/is72ujzk \
+  trainer.print_metrics=true
+```
 
-## Acknowledgement
-Thank you Sotiris Lamprinidis for providing an efficient implementation of our multi-label stratification algorithm and some data preprocessing helper functions.
+Replace `files/is72ujzk` with the actual path to your saved checkpoint.
+
+---
+
+## 4. What gets logged and where to find results
+
+Depending on your configuration:
+
+- **Checkpoints** – saved in `load_model` / `output_dir` folder (see the
+  experiment config).
+- **Metrics** – printed to stdout (`trainer.print_metrics=true`) and often
+  logged to:
+  - Weights & Biases (if W&B is enabled),
+  - local log files under `logs/` or `outputs/…` (Hydra default).
+
+Look for metrics such as micro/macro F1, AUC, precision, recall, etc.
+
+---
+
+## 5. Running on an HPC cluster (SLURM example)
+
+Below is a generic HPC setup assuming:
+
+- a SLURM-based cluster,
+- modules for Python and CUDA,
+- you can allocate a GPU (e.g. A100/V100 etc.).
+
+### 5.1. Prepare environment on HPC
+
+Log in to the cluster and run *med_train.sh* for training an actual MIMICIII-full dataset.
+
+### 5.2. Evaluating on HPC
+
+To evaluate an existing checkpoint on the HPC cluster, just change the last
+line in the *med_test.sh* SLURM script:
+
+```bash
+python -u main.py \
+  experiment=mimiciii_demo/plm_icd \
+  gpu=0 \
+  trainer.epochs=0 \
+  load_model=files/is72ujzk \
+  trainer.print_metrics=true
+```
+
+Again, adjust `load_model` to the actual checkpoint path (which might be on
+a shared scratch or project directory, depending on your cluster rules).
+
+---
