@@ -14,6 +14,13 @@ dist/
 downloads/
 eggs/
 .eggs/
+RoBERTa-base-PM-M3-Voc-hf/
+dataset/
+files/is72ujzk/
+files/m18k47fc/
+files/mng9o2ti/
+files/data/mimiciii_50
+files/data/mimiciii_full
 lib/
 lib64/
 parts/
