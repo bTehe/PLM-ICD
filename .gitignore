@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+src/trainer/__pycache__
 eggs/
 .eggs/
 RoBERTa-base-PM-M3-Voc-hf/
