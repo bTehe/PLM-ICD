@@ -16,11 +16,11 @@ test  = load_split("test")
 
 full = pd.concat([train, dev, test], ignore_index=True)
 
-# припускаємо, що у CSV є колонки: HADM_ID, text, label
+# We assume that the CSV has the following columns: HADM_ID, text, label
 full["_id"] = full["HADM_ID"].astype(int)
 full["subject_id"] = full["_id"]
 
-# рядок "4019;25000" -> список ["4019", "25000"]
+# string "4019;25000" -> список ["4019", "25000"]
 def split_codes(s):
     if pd.isna(s):
         return []
@@ -28,7 +28,7 @@ def split_codes(s):
 
 full["codes"] = full["label"].apply(split_codes)
 
-# у цьому репо очікуються такі колонки
+# The following columns are expected in this repo
 full["icd9_diag"] = full["codes"]
 full["icd9_proc"] = [[] for _ in range(len(full))]
 full["target"]    = full["codes"]
@@ -42,7 +42,7 @@ cols = ["subject_id", "_id", "text",
 
 full[cols].to_feather(DATA_DIR / "mimiciii_demo.feather")
 
-# окремий файл зі сплітами (_id + split), як у mimiciii_full_splits.feather
+# a separate file with splits (_id + split), like in mimiciii_full_splits.feather
 splits = full[["_id", "split"]].copy()
 splits.to_feather(DATA_DIR / "mimiciii_demo_splits.feather")
 

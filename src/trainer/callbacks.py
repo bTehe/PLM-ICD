@@ -100,7 +100,7 @@ class WandbCallback(BaseCallback):
             wandb_cfg["data_info"] = trainer.lookups.data_info
 
         init_kwargs = OmegaConf.to_container(self.config, resolve=True) or {}
-        # Защитно почистим конфликты:
+       # Defensively clean up conflicts:
         for k in ("dir", "tags", "name", "config", "settings", "mode"):
             init_kwargs.pop(k, None)
 
