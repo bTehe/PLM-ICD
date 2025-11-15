@@ -158,11 +158,7 @@ If not, double-check:
 This will train a PLM-ICD model on the **MIMIC-III full** dataset:
 
 ```bash
-python -u main.py \
-  experiment=mimiciii_full/plm_icd \
-  gpu=0 \
-  trainer.epochs=5 \
-  trainer.print_metrics=true
+python -u main.py experiment=mimiciii_full/plm_icd gpu=0 trainer.epochs=5 trainer.print_metrics=true
 ```
 
 Main arguments:
@@ -184,12 +180,7 @@ If you already have a trained model, point `load_model` to its folder and set
 `trainer.epochs=0` to run pure evaluation:
 
 ```bash
-python -u main.py \
-  experiment=mimiciii_full/plm_icd \
-  gpu=0 \
-  trainer.epochs=0 \
-  load_model=files/is72ujzk \
-  trainer.print_metrics=true
+python -u main.py experiment=mimiciii_full/plm_icd gpu=0 trainer.epochs=0 load_model=files/is72ujzk trainer.print_metrics=true
 ```
 
 Replace `files/is72ujzk` with the actual path to your saved checkpoint
