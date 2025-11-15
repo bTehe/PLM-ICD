@@ -1,3 +1,79 @@
+# PLM-ICD on `mimiciii_full` (Reproducibility challenge)
+
+This repository is a fork/customisation of **medical-coding-reproducibility**.
+
+It focuses on reproducing the PLM-ICD results on **MIMIC-III full** using the data pipelines from the *Explainable Prediction of Medical Codes from Clinical Text* line of work.
+
+---
+
+## 1. Installation (local machine)
+
+### 1.1. Clone the repo
+
+```bash
+git clone https://github.com/bTehe/PLM-ICD.git PLM-ICD
+cd PLM-ICD
+```
+
+### 1.2. Create environment
+
+Using conda (recommended):
+
+```bash
+conda create -n plmicd-demo python=3.10 -y
+conda activate plmicd-demo
+pip install -r requirements.txt
+```
+
+If you use plain `venv`, the steps are analogous.
+
+---
+
+## 2. Data preparation
+
+If you want to use the **MIMIC-III full** and **MIMIC-III 50** datasets from the *Explainable Prediction of Medical Codes from Clinical Text*, you need to run:
+
+```bash
+python prepare_data/prepare_mimiciii_mullenbach.py
+```
+
+This script follows the **Mullenbach-style** preprocessing and will:
+
+- read the raw MIMIC-III v1.4 CSV files (e.g. `NOTEEVENTS.csv.gz`, `DIAGNOSES_ICD.csv.gz`, etc.),
+- build discharge summaries and label sets,
+- generate:
+  - `mimiciii_full.feather` + `mimiciii_full_splits.feather`,
+  - `mimiciii_50.feather` + `mimiciii_50_splits.feather`,
+
+and place them in the corresponding data folders (as configured in `src/settings.py` / your data configs).
+
+Make sure you have valid access to MIMIC-III and have put all raw `.csv.gz` files into the directory specified in your settings.
+
+---
+
+## 3. Running the `mimiciii_full` experiment locally
+
+### 3.1. Quick sanity check
+
+Make sure Hydra sees the configs:
+
+```bash
+ls configs/data/mimiciii_full.yaml
+ls configs/experiment/mimiciii_full/plm_icd.yaml
+```
+
+Make sure the dataset files are where they should be (for example):
+
+```bash
+ls files/data/mimiciii_full
+# should contain mimiciii_full.feather and mimiciii_full_splits.feather (and possibly ALL_CODES.txt)
+```
+
+Adjust the path if your data directory is named differently (e.g. `dataset/mimiciii_full`).
+
+---
+
+
 ### 3.2. Before running experiments
 
 1. **Weights & Biases (optional)**  
