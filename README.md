@@ -27,18 +27,13 @@
 This will train a PLM-ICD model on the **MIMIC-III full** dataset:
 
 ```bash
-python -u main.py \
-  experiment=mimiciii_full/plm_icd \
-  gpu=0 \
-  trainer.epochs=5 \
-  trainer.print_metrics=true
+python -u main.py experiment=mimiciii_full/plm_icd gpu=0 trainer.print_metrics=true
 ```
 
 Main arguments:
 
 - `experiment=mimiciii_full/plm_icd` – choose the right Hydra experiment for MIMIC-III full.
 - `gpu=0` – use GPU 0 (set to `-1` to use CPU only, or another index).
-- `trainer.epochs=5` – number of training epochs (tune as you wish, e.g. 20 for full training).
 - `trainer.print_metrics=true` – print evaluation metrics after each validation phase.
 
 The model checkpoint will be written under the path configured in the
@@ -53,12 +48,7 @@ If you already have a trained model, point `load_model` to its folder and set
 `trainer.epochs=0` to run pure evaluation:
 
 ```bash
-python -u main.py \
-  experiment=mimiciii_full/plm_icd \
-  gpu=0 \
-  trainer.epochs=0 \
-  load_model=files/is72ujzk \
-  trainer.print_metrics=true
+python -u main.py experiment=mimiciii_full/plm_icd gpu=0 trainer.epochs=0 load_model=files/is72ujzk trainer.print_metrics=true
 ```
 
 Replace `files/is72ujzk` with the actual path to your saved checkpoint
