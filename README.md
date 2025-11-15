@@ -62,16 +62,6 @@ This project follows the **Mullenbach-style** MIMIC-III preprocessing from
 
    to the actual path where your **raw** MIMIC-III `.csv.gz` files are stored.
 
-3. (Optional but recommended) Also set where the *processed* MIMIC-III data will be written.  
-   For example, to keep everything inside this repo, you can set in `src/settings.py`:
-
-   ```python
-   DATA_DIRECTORY_MIMICIII_FULL = "files/data/mimiciii_full"
-   DATA_DIRECTORY_MIMICIII_50   = "files/data/mimiciii_50"
-   ```
-
-   This way the generated `.feather` and split files will end up under `files/data/...` and match the paths expected by your Hydra configs.
-
 ### 2.2. Run the Mullenbach-style preprocessing
 
 If you want to use the **MIMIC-III full** and **MIMIC-III 50** datasets from the
