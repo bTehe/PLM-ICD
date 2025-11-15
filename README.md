@@ -1,118 +1,68 @@
-# PLM-ICD on `mimiciii_demo` (MIMIC-III Demo, Synthetic Notes)
+### 3.2. Before running experiments
 
-This repository is a fork/customisation of **medical-coding-reproducibility** that
-adds a **toy ICD coding experiment** based on the **MIMIC-III Demo** dataset.
+1. **Weights & Biases (optional)**  
+   Create a Weights & Biases account and log in if you want experiment tracking. It is also possible to run the experiments without W&B; in that case, disable or ignore the W&B integration in the configs.
 
-Because MIMIC-III Demo does **not** contain free-text clinical notes, we build a
-synthetic dataset called **`mimiciii_demo`**:
+2. **Download RoBERTa-base-PM-M3-Voc**  
+   Download [RoBERTa-base-PM-M3-Voc](https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-hf.tar.gz), unzip it, and change the `model_path` parameter in  
+   **`configs/model/plm_icd.yaml`** and **`configs/text_transform/huggingface.yaml`** to point to the extracted model folder.
 
-- input text is generated from ICD long titles,
-- labels are true ICD-9 codes from the demo tables,
-- we then train / evaluate **PLM-ICD** on this toy dataset.
+3. **Prepare MIMIC-III full / 50**  
+   If you want to use **MIMIC-III full** and **MIMIC-III 50** from *Explainable Prediction of Medical Codes from Clinical Text*, run:
 
-> ⚠️ **Important:** This is for debugging, teaching and pipeline testing only.  
-> The dataset is synthetic and **not suitable for real clinical conclusions or training.**
-> The .feather files are already included, so you do not need MIMIC-III full
-to run this experiment.
+   ```bash
+   python prepare_data/prepare_mimiciii_mullenbach.py
+   ```
 
-## 1. How the `mimiciii_demo` dataset is constructed
+   and verify that the generated `.feather` and split files match what your data configs expect.
 
-High-level idea:
-
-1. Read MIMIC-III Demo tables:
-   - `DIAGNOSES_ICD.csv`
-   - `D_ICD_DIAGNOSES.csv`
-2. Group ICD-9 codes per `HADM_ID`.
-3. For each `HADM_ID`, create a synthetic “note”:
-   - concatenate `LONG_TITLE` of each ICD-9 code into a short paragraph  
-     (e.g. `"Diagnoses: CONGESTIVE HEART FAILURE. TYPE II DIABETES..."`).
-4. Use the ICD-9 codes as multi-label targets:
-   - labels are stored as a list of codes (and also as a string `"4019;25000;..."` in CSV).
-5. Randomly split admissions into train/validation/test, e.g. 60/20/20.
-6. Save:
-   - `train_demo.csv`, `dev_demo.csv`, `test_demo.csv`
-   - merged and preprocessed dataset in `mimiciii_demo.feather`
-   - split information in `mimiciii_demo_splits.feather`.
-
-These last two Feather files are what the training code actually loads.
-
-## 2. Installation (local machine)
-
-### 2.1. Clone the repo
-git clone https://github.com/bTehe/PLM-ICD.git PLM-ICD
-```bash
-cd PLM-ICD
-```
-
-### 2.2. Create environment
-
-Using conda (recommended):
-
-```bash
-conda create -n plmicd-demo python=3.10 -y
-conda activate plmicd-demo
-pip install -r requirements.txt
-```
-
-If you use plain `venv`, the steps are analogous.
+4. **Download model checkpoints (optional)**  
+   Download the model checkpoints and unzip them if you want to evaluate existing models instead of training from scratch.  
+   **Please note that these model weights can't be used commercially due to the MIMIC License.**
 
 ---
 
-## 3. Running the `mimiciii_demo` experiment locally
+### 3.3. Training PLM-ICD from scratch on `mimiciii_full`
 
-### 3.1. Quick sanity check
-
-Make sure Hydra sees the configs:
+This will train a PLM-ICD model on the **MIMIC-III full** dataset:
 
 ```bash
-ls configs/data/mimiciii_demo.yaml
-ls configs/experiment/mimiciii_demo/plm_icd.yaml
-```
-
-Make sure the dataset files are where they should be:
-
-```bash
-ls files/data/mimiciii_demo
-# should contain mimiciii_demo.feather and mimiciii_demo_splits.feather
-```
-### Before running experiments
-1. Create a weights and biases account. It is possible to run the experiments without wandb.
-2. You need to download [RoBERTa-base-PM-M3-Voc](https://dl.fbaipublicfiles.com/biolm/RoBERTa-base-PM-M3-Voc-hf.tar.gz), unzip it and change the model_path parameter in **`configs/model/plm_icd.yaml`** and **`configs/text_transform /huggingface.yaml`** to the path of the download.
-
-### 3.2. Training PLM-ICD from scratch on `mimiciii_demo`
-
-This will train a PLM-ICD model on the synthetic dataset:
-
-```bash
-python -u main.py experiment=mimiciii_demo/plm_icd gpu=0 trainer.epochs=5 trainer.print_metrics=true
+python -u main.py \
+  experiment=mimiciii_full/plm_icd \
+  gpu=0 \
+  trainer.epochs=5 \
+  trainer.print_metrics=true
 ```
 
 Main arguments:
 
-- `experiment=mimiciii_demo/plm_icd` – choose the right Hydra experiment.
+- `experiment=mimiciii_full/plm_icd` – choose the right Hydra experiment for MIMIC-III full.
 - `gpu=0` – use GPU 0 (set to `-1` to use CPU only, or another index).
-- `trainer.epochs=5` – number of training epochs (tune as you wish).
-- `trainer.print_metrics=true` – print evaluation metrics after training.
+- `trainer.epochs=5` – number of training epochs (tune as you wish, e.g. 20 for full training).
+- `trainer.print_metrics=true` – print evaluation metrics after each validation phase.
 
 The model checkpoint will be written under the path configured in the
 experiment (typically inside `files/` or a Hydra `outputs/` directory,
-depending on your settings).
+depending on your settings.
 
-### 3.3. Evaluating an existing checkpoint on `mimiciii_demo`
+---
+
+### 3.4. Evaluating an existing checkpoint on `mimiciii_full`
 
 If you already have a trained model, point `load_model` to its folder and set
 `trainer.epochs=0` to run pure evaluation:
 
 ```bash
 python -u main.py \
-  experiment=mimiciii_demo/plm_icd \
+  experiment=mimiciii_full/plm_icd \
   gpu=0 \
   trainer.epochs=0 \
   load_model=files/is72ujzk \
   trainer.print_metrics=true
 ```
 
-Replace `files/is72ujzk` with the actual path to your saved checkpoint.
+Replace `files/is72ujzk` with the actual path to your saved checkpoint
+(for example `files/mimiciii_full/plm_icd/best.ckpt` or a similar directory).
 
 ---
 
@@ -120,7 +70,7 @@ Replace `files/is72ujzk` with the actual path to your saved checkpoint.
 
 Depending on your configuration:
 
-- **Checkpoints** – saved in `load_model` / `output_dir` folder (see the
+- **Checkpoints** – saved in the `load_model` / `output_dir` folder (see the
   experiment config).
 - **Metrics** – printed to stdout (`trainer.print_metrics=true`) and often
   logged to:
@@ -141,16 +91,34 @@ Below is a generic HPC setup assuming:
 
 ### 5.1. Prepare environment on HPC
 
-Log in to the cluster and run *med_train.sh* for training an actual MIMICIII-full dataset.
+Log in to the cluster and use your existing scripts:
+
+- `med_train.sh` – for training on the actual **MIMIC-III full** dataset.
+- `med_test.sh` – for evaluating a trained model on the test split.
+
+A typical `med_train.sh` script will:
+
+- load modules (Python, CUDA),
+- activate the `plmicd-demo` (or similar) environment,
+- `cd` into `PLM-ICD`,
+- call something like:
+
+  ```bash
+  python -u main.py \
+    experiment=mimiciii_full/plm_icd \
+    gpu=0 \
+    trainer.epochs=20 \
+    trainer.print_metrics=true
+  ```
 
 ### 5.2. Evaluating on HPC
 
-To evaluate an existing checkpoint on the HPC cluster, just change the last
-line in the *med_test.sh* SLURM script:
+To evaluate an existing checkpoint on the HPC cluster, adjust the last
+line in the `med_test.sh` SLURM script to something like:
 
 ```bash
 python -u main.py \
-  experiment=mimiciii_demo/plm_icd \
+  experiment=mimiciii_full/plm_icd \
   gpu=0 \
   trainer.epochs=0 \
   load_model=files/is72ujzk \
